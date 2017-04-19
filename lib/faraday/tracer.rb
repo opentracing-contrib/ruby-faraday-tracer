@@ -19,7 +19,7 @@ module Faraday
           'http.url' => env[:url].to_s
         }
       )
-      @tracer.inject(span.context, OpenTracing::FORMAT_RACK, env)
+      @tracer.inject(span.context, OpenTracing::FORMAT_RACK, env[:request_headers])
       @app.call(env).on_complete do |response|
         span.set_tag('http.status_code', response.status)
         span.finish
