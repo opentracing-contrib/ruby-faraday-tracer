@@ -1,5 +1,7 @@
 # Faraday::Tracer
 
+OpenTracing compatible Faraday middleware.
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -10,6 +12,25 @@ gem 'faraday-tracer'
 
 ## Usage
 
+```ruby
+require 'opentracing'
+OpenTracing.global_tracer = TracerImplementation.new
+
+require 'faraday'
+require 'faraday/tracer'
+
+# Use already existing span to use it as as a parent span. In case there is no
+# existing span leave it nil to start a new trace.
+span = request.env['rack.span'] # when using rack-tracer gem
+
+conn = Faraday.new(url: 'http://localhost:3000/') do |faraday|
+  faraday.use Faraday::Tracer, span: span
+
+  # default Faraday stack
+  faraday.request :url_encoded
+  faraday.adapter Faraday.default_adapter
+end
+```
 
 ## Development
 
