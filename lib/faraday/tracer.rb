@@ -10,7 +10,7 @@ module Faraday
     end
 
     def call(env)
-      span = @tracer.start_span(env[:method],
+      span = @tracer.start_span(env[:method].to_s.upcase,
         child_of: @parent_span,
         tags: {
           'component' => 'faraday',
