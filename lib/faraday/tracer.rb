@@ -14,7 +14,7 @@ module Faraday
         child_of: @parent_span,
         tags: {
           'component' => 'faraday',
-          'span.kind' => 'server',
+          'span.kind' => 'client',
           'http.method' => env[:method],
           'http.url' => env[:url].to_s
         }

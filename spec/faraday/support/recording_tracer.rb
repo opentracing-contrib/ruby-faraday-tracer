@@ -5,19 +5,20 @@ class RecordingTracer
     @finished_spans = []
   end
 
-  def start_span(operation_name, **)
-    Span.new(self, operation_name)
+  def start_span(operation_name, tags: {}, **)
+    Span.new(self, operation_name, tags)
   end
 
   def inject(*)
   end
 
   class Span
-    attr_reader :operation_name
+    attr_reader :operation_name, :tags
 
-    def initialize(tracer, operation_name)
+    def initialize(tracer, operation_name, tags)
       @tracer = tracer
       @operation_name = operation_name
+      @tags = tags
     end
 
     def finish

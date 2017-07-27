@@ -10,6 +10,12 @@ RSpec.describe Faraday::Tracer do
     expect(span.operation_name).to eq('POST')
   end
 
+  it 'sets span.kind to client' do
+    call(method: :post)
+    span = tracer.finished_spans.first
+    expect(span.tags['span.kind']).to eq('client')
+  end
+
   def call(options)
     app = lambda {|env| env}
     env = Faraday::Env.from(options)
