@@ -11,10 +11,13 @@ module Faraday
     #        evaluated during the call method invocation.
     # @param tracer [OpenTracing::Tracer] A tracer to be used when start_span, and inject
     #        is called.
-    def initialize(app, span: nil, tracer: OpenTracing.global_tracer)
+    # @param errors [Array<Class>] An array of error classes to be captured by the tracer
+    #        as errors. Errors are **not** muted by the middleware.
+    def initialize(app, span: nil, tracer: OpenTracing.global_tracer, errors: [StandardError])
       super(app)
       @tracer = tracer
       @parent_span = span
+      @errors = errors
     end
 
     def call(env)
@@ -30,8 +33,13 @@ module Faraday
       @tracer.inject(span.context, OpenTracing::FORMAT_RACK, env[:request_headers])
       @app.call(env).on_complete do |response|
         span.set_tag('http.status_code', response.status)
-        span.finish
       end
+    rescue *@errors => e
+      span.set_tag('error', true)
+      span.log(event: 'error', :'error.object' => e)
+      raise
+    ensure
+      span.finish
     end
   end
 end
