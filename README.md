@@ -40,7 +40,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/salemove/faraday-tracer.
+Bug reports and pull requests are welcome on GitHub at https://github.com/opentracing-contrib/ruby-faraday-tracer.
 
 
 ## License
