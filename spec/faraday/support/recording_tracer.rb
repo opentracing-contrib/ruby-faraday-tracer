@@ -13,15 +13,22 @@ class RecordingTracer
   end
 
   class Span
-    attr_reader :operation_name, :tags
+    class SpanAlreadyFinished < StandardError; end
+
+    attr_reader :operation_name, :tags, :logs
 
     def initialize(tracer, operation_name, tags)
       @tracer = tracer
       @operation_name = operation_name
       @tags = tags
+      @logs = []
+      @open = true
     end
 
     def finish
+      ensure_in_progress!
+
+      @open = false
       @tracer.finished_spans << self
     end
 
@@ -29,7 +36,25 @@ class RecordingTracer
       {}
     end
 
-    def set_tag(*)
+    def set_tag(key, value)
+      ensure_in_progress!
+
+      @tags[key] = value
+      self
+    end
+
+    def log(event: nil, timestamp: Time.now, **fields)
+      ensure_in_progress!
+
+      @logs << {event: event, timestamp: timestamp, fields: fields}
+    end
+
+  private
+
+    def ensure_in_progress!
+      unless @open
+        raise SpanAlreadyFinished.new("No modification operations allowed. The span is already finished.")
+      end
     end
   end
 end
