@@ -20,6 +20,8 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'opentracing'
 
+  spec.add_development_dependency "test-tracer", "~> 1.0"
+  spec.add_development_dependency "tracing-matchers", "~> 1.0"
   spec.add_development_dependency 'bundler', '~> 1.14'
   spec.add_development_dependency 'rake', '~> 10.0'
   spec.add_development_dependency 'rspec', '~> 3.0'

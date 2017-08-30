@@ -1,4 +1,6 @@
 require 'bundler/setup'
+require 'test/tracer'
+require 'tracing/matchers'
 require 'faraday/tracer'
 
 RSpec.configure do |config|
