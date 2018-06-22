@@ -36,7 +36,7 @@ module Faraday
       end
     rescue *@errors => e
       span.set_tag('error', true)
-      span.log(event: 'error', :'error.object' => e)
+      span.log_kv(event: 'error', :'error.object' => e)
       raise
     ensure
       span.finish
