@@ -1,19 +1,16 @@
 require 'spec_helper'
-require_relative './support/recording_tracer'
 
 RSpec.describe Faraday::Tracer do
-  let(:tracer) { RecordingTracer.new }
+  let(:tracer) { Test::Tracer.new }
 
   it 'uses upcase HTTP method as span operation name' do
     call(method: :post)
-    span = tracer.finished_spans.first
-    expect(span.operation_name).to eq('POST')
+    expect(tracer).to have_span('POST').finished
   end
 
   it 'sets span.kind to client' do
     call(method: :post)
-    span = tracer.finished_spans.first
-    expect(span.tags['span.kind']).to eq('client')
+    expect(tracer).to have_span.with_tag('span.kind', 'client')
   end
 
   describe 'parent_span' do
@@ -35,28 +32,20 @@ RSpec.describe Faraday::Tracer do
   describe 'error handling' do
     it 'finishes the span' do
       expect { call(app: lambda {|env| raise Timeout::Error }) }.to raise_error { |_|
-        expect(tracer.finished_spans.first).not_to be_nil
+        expect(tracer).to have_spans.finished
       }
     end
 
     it 'marks the span as failed' do
       expect { call(app: lambda {|env| raise Timeout::Error }) }.to raise_error { |_|
-        span = tracer.finished_spans.first
-
-        expect(span.tags['error']).to eq(true)
+        expect(tracer).to have_span.with_tag('error', true)
       }
     end
 
     it 'logs the error' do
       exception = Timeout::Error.new
       expect { call(app: lambda {|env| raise exception }) }.to raise_error { |thrown_exception|
-        span = tracer.finished_spans.first
-        log = span.logs.first
-
-        expect(span.logs).not_to be_empty
-        expect(log[:event]).to eq('error')
-        expect(log[:fields][:'error.object']).to eq(thrown_exception)
-        expect(log[:fields][:'error.object']).to eq(exception)
+        expect(tracer).to have_span.with_log(event: 'error', :'error.object' => thrown_exception)
       }
     end
 
