@@ -12,6 +12,35 @@ gem 'faraday-tracer'
 
 ## Usage
 
+### Using request context
+
+```ruby
+require 'opentracing'
+OpenTracing.global_tracer = TracerImplementation.new
+
+require 'faraday'
+require 'faraday/tracer'
+
+conn = Faraday.new(url: 'http://localhost:3000/') do |faraday|
+  # Add tracing support
+  faraday.use Faraday::Tracer
+
+  # default Faraday stack
+  faraday.request :url_encoded
+  faraday.adapter Faraday.default_adapter
+end
+
+span = request.env['rack.span'] # when using rack-tracer gem
+
+conn.post('/test') do |request|
+  # Leave undefined or set span to nil if there's no existing span
+  request.options.context = {span: span}
+end
+```
+
+
+### Defining span in the connection builder
+
 ```ruby
 require 'opentracing'
 OpenTracing.global_tracer = TracerImplementation.new
