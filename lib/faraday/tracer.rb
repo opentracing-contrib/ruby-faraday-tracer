@@ -22,7 +22,7 @@ module Faraday
 
     def call(env)
       span = @tracer.start_span(env[:method].to_s.upcase,
-        child_of: @parent_span.respond_to?(:call) ? @parent_span.call : @parent_span,
+        child_of: parent_span(env),
         tags: {
           'component' => 'faraday',
           'span.kind' => 'client',
@@ -40,6 +40,17 @@ module Faraday
       raise
     ensure
       span.finish
+    end
+
+    private
+
+    def parent_span(env)
+      context = env.request.context
+      span = context.is_a?(Hash) && context[:span] || @parent_span
+
+      if span
+        span.respond_to?(:call) ? span.call : span
+      end
     end
   end
 end
