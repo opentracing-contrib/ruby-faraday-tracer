@@ -1,6 +1,9 @@
 # Faraday::Tracer
 
-OpenTracing compatible Faraday middleware.
+OpenTracing compatible Faraday middleware:
+
+* It wraps all outgoing requests in spans
+* It adds the trace context to outgoing requests
 
 ## Installation
 
@@ -61,6 +64,11 @@ conn = Faraday.new(url: 'http://localhost:3000/') do |faraday|
 end
 ```
 
+### Span name
+
+By default, all spans are given a default name. You may also override this by
+passing a `:span_name` in the middleware options hash and/or the request
+options.
 
 ### Service name
 

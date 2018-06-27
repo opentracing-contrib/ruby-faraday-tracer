@@ -9,22 +9,31 @@ module Faraday
     # @param span [Span, SpanContext, Proc, nil] SpanContext that acts as a parent to
     #        the newly-started by the middleware Span. If a Proc is provided, its
     #        evaluated during the call method invocation.
+    # @param span_name [String, nil] The name of the span to create.
     # @param service_name [String, nil] Remote service name (for some
     #        unspecified definition of "service")
     # @param tracer [OpenTracing::Tracer] A tracer to be used when start_span, and inject
     #        is called.
     # @param errors [Array<Class>] An array of error classes to be captured by the tracer
     #        as errors. Errors are **not** muted by the middleware.
-    def initialize(app, span: nil, service_name: nil, tracer: OpenTracing.global_tracer, errors: [StandardError])
+    def initialize(
+        app,
+        span: nil,
+        span_name: nil,
+        service_name: nil,
+        tracer: OpenTracing.global_tracer,
+        errors: [StandardError]
+    )
       super(app)
       @tracer = tracer
       @parent_span = span
+      @span_name = span_name
       @service_name = service_name
       @errors = errors
     end
 
     def call(env)
-      span = @tracer.start_span(env[:method].to_s.upcase,
+      span = @tracer.start_span(span_name(env),
         child_of: parent_span(env),
         tags: prepare_tags(env)
       )
@@ -41,6 +50,11 @@ module Faraday
     end
 
     private
+
+    def span_name(env)
+      context = env.request.context
+      context.is_a?(Hash) && context[:span_name] || @span_name || env[:method].to_s.upcase
+    end
 
     def parent_span(env)
       context = env.request.context

@@ -11,6 +11,12 @@ RSpec.describe Faraday::Tracer do
       expect(tracer).to have_span('POST').finished
     end
 
+    it 'uses provided span_name as span operation name' do
+      span_name = 'custom span name'
+      make_request.call(method: :post, span_name: span_name)
+      expect(tracer).to have_span(span_name).finished
+    end
+
     it 'sets span.kind to client' do
       make_request.call(method: :post)
       expect(tracer).to have_span.with_tag('span.kind', 'client')
@@ -74,7 +80,7 @@ RSpec.describe Faraday::Tracer do
 
   def make_builder_request(options)
     app = options.delete(:app) || lambda {|app_env| [200, {}, 'OK']}
-    request_options = options.slice(:span, :service_name)
+    request_options = options.slice(:span, :span_name, :service_name)
 
     connection = Faraday.new do |builder|
       builder.use Faraday::Tracer, request_options.merge(tracer: tracer)
@@ -88,7 +94,7 @@ RSpec.describe Faraday::Tracer do
 
   def make_explicit_request(options)
     app = options.delete(:app) || lambda {|app_env| [200, {}, 'OK']}
-    request_options = options.slice(:span, :service_name)
+    request_options = options.slice(:span, :span_name, :service_name)
 
     connection = Faraday.new do |builder|
       builder.use Faraday::Tracer, tracer: tracer
