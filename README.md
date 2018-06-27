@@ -61,6 +61,11 @@ conn = Faraday.new(url: 'http://localhost:3000/') do |faraday|
 end
 ```
 
+
+### Service name
+
+It's possible to define the remote service name by using `:service_name` option.
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.

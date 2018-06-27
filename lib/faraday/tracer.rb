@@ -9,26 +9,24 @@ module Faraday
     # @param span [Span, SpanContext, Proc, nil] SpanContext that acts as a parent to
     #        the newly-started by the middleware Span. If a Proc is provided, its
     #        evaluated during the call method invocation.
+    # @param service_name [String, nil] Remote service name (for some
+    #        unspecified definition of "service")
     # @param tracer [OpenTracing::Tracer] A tracer to be used when start_span, and inject
     #        is called.
     # @param errors [Array<Class>] An array of error classes to be captured by the tracer
     #        as errors. Errors are **not** muted by the middleware.
-    def initialize(app, span: nil, tracer: OpenTracing.global_tracer, errors: [StandardError])
+    def initialize(app, span: nil, service_name: nil, tracer: OpenTracing.global_tracer, errors: [StandardError])
       super(app)
       @tracer = tracer
       @parent_span = span
+      @service_name = service_name
       @errors = errors
     end
 
     def call(env)
       span = @tracer.start_span(env[:method].to_s.upcase,
         child_of: parent_span(env),
-        tags: {
-          'component' => 'faraday',
-          'span.kind' => 'client',
-          'http.method' => env[:method],
-          'http.url' => env[:url].to_s
-        }
+        tags: prepare_tags(env)
       )
       @tracer.inject(span.context, OpenTracing::FORMAT_RACK, env[:request_headers])
       @app.call(env).on_complete do |response|
@@ -51,6 +49,26 @@ module Faraday
       if span
         span.respond_to?(:call) ? span.call : span
       end
+    end
+
+    def prepare_tags(env)
+      tags = {
+        'component' => 'faraday',
+        'span.kind' => 'client',
+        'http.method' => env[:method],
+        'http.url' => env[:url].to_s,
+      }
+
+      if (service_name = peer_service(env))
+        tags['peer.service'] = service_name
+      end
+
+      tags
+    end
+
+    def peer_service(env)
+      context = env.request.context
+      context.is_a?(Hash) && context[:service_name] || @service_name
     end
   end
 end

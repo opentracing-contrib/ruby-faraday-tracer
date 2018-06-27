@@ -4,6 +4,7 @@ require 'tracing/matchers'
 require 'faraday/tracer'
 
 require 'support/test-tracer'
+require 'support/hash'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

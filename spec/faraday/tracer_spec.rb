@@ -16,6 +16,12 @@ RSpec.describe Faraday::Tracer do
       expect(tracer).to have_span.with_tag('span.kind', 'client')
     end
 
+    it 'sets peer.service when service_name is provided' do
+      service_name = 'service-name'
+      make_request.call(method: :post, service_name: service_name)
+      expect(tracer).to have_span.with_tag('peer.service', service_name)
+    end
+
     describe 'parent_span' do
       it 'allows to pass a pre-created parent span' do
         parent_span = tracer.start_span("parent_span")
@@ -68,9 +74,10 @@ RSpec.describe Faraday::Tracer do
 
   def make_builder_request(options)
     app = options.delete(:app) || lambda {|app_env| [200, {}, 'OK']}
+    request_options = options.slice(:span, :service_name)
 
     connection = Faraday.new do |builder|
-      builder.use Faraday::Tracer, span: options[:span], tracer: tracer
+      builder.use Faraday::Tracer, request_options.merge(tracer: tracer)
       builder.adapter :test do |stub|
         stub.post('/', &app)
       end
@@ -81,6 +88,7 @@ RSpec.describe Faraday::Tracer do
 
   def make_explicit_request(options)
     app = options.delete(:app) || lambda {|app_env| [200, {}, 'OK']}
+    request_options = options.slice(:span, :service_name)
 
     connection = Faraday.new do |builder|
       builder.use Faraday::Tracer, tracer: tracer
@@ -90,7 +98,7 @@ RSpec.describe Faraday::Tracer do
     end
 
     connection.post('/') do |request|
-      request.options.context = {span: options[:span]}
+      request.options.context = request_options
     end
   end
 end
