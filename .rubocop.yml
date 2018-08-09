@@ -1,0 +1,34 @@
+require: rubocop-rspec
+
+Metrics/AbcSize:
+  Enabled: no
+
+Metrics/BlockLength:
+  Enabled: no
+
+Metrics/LineLength:
+  Max: 120
+
+Metrics/MethodLength:
+  Enabled: no
+
+Style/Documentation:
+  Enabled: no
+
+RSpec/ExampleLength:
+  Enabled: no
+
+RSpec/MultipleExpectations:
+  Enabled: no
+
+RSpec/MessageSpies:
+  Enabled: no
+
+Style/FrozenStringLiteralComment:
+  Enabled: yes
+  EnforcedStyle: always
+  Include:
+    - 'lib/**/*'
+
+Naming/FileName:
+  Enabled: no

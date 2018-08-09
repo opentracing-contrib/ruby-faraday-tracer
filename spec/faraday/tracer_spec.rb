@@ -30,14 +30,14 @@ RSpec.describe Faraday::Tracer do
 
     describe 'parent_span' do
       it 'allows to pass a pre-created parent span' do
-        parent_span = tracer.start_span("parent_span")
+        parent_span = tracer.start_span('parent_span')
         expect(tracer).to receive(:start_span).with(any_args, hash_including(child_of: parent_span)).and_call_original
         make_request.call(method: :post, span: parent_span)
       end
 
       it 'allows to pass a block as a parent span provider' do
-        parent_span = tracer.start_span("parent_span")
-        parent_span_provider = lambda { parent_span }
+        parent_span = tracer.start_span('parent_span')
+        parent_span_provider = -> { parent_span }
 
         expect(tracer).to receive(:start_span).with(any_args, hash_including(child_of: parent_span)).and_call_original
         make_request.call(method: :post, span: parent_span_provider)
@@ -46,26 +46,26 @@ RSpec.describe Faraday::Tracer do
 
     describe 'error handling' do
       it 'finishes the span' do
-        expect { make_request.call(app: lambda {|env| raise Timeout::Error }) }.to raise_error { |_|
-          expect(tracer).to have_spans.finished
-        }
+        exception = Timeout::Error.new
+        expect { make_request.call(app: ->(_env) { raise exception }) }.to raise_error(exception)
+        expect(tracer).to have_spans.finished
       end
 
       it 'marks the span as failed' do
-        expect { make_request.call(app: lambda {|env| raise Timeout::Error }) }.to raise_error { |_|
-          expect(tracer).to have_span.with_tag('error', true)
-        }
+        exception = Timeout::Error.new
+        expect { make_request.call(app: ->(_env) { raise exception }) }.to raise_error(exception)
+        expect(tracer).to have_span.with_tag('error', true)
       end
 
       it 'logs the error' do
         exception = Timeout::Error.new
-        expect { make_request.call(app: lambda {|env| raise exception }) }.to raise_error { |thrown_exception|
-          expect(tracer).to have_span.with_log(event: 'error', :'error.object' => thrown_exception)
-        }
+        expect { make_request.call(app: ->(_env) { raise exception }) }.to raise_error(exception)
+        expect(tracer).to have_span.with_log(event: 'error', :'error.object' => exception)
       end
 
       it 're-raise original exception' do
-        expect { make_request.call(app: lambda {|env| raise Timeout::Error }) }.to raise_error(Timeout::Error)
+        exception = Timeout::Error.new
+        expect { make_request.call(app: ->(_env) { raise exception }) }.to raise_error(exception)
       end
     end
   end
@@ -79,7 +79,7 @@ RSpec.describe Faraday::Tracer do
   end
 
   def make_builder_request(options)
-    app = options.delete(:app) || lambda {|app_env| [200, {}, 'OK']}
+    app = options.delete(:app) || ->(_app_env) { [200, {}, 'OK'] }
     request_options = options.slice(:span, :span_name, :service_name)
 
     connection = Faraday.new do |builder|
@@ -93,7 +93,7 @@ RSpec.describe Faraday::Tracer do
   end
 
   def make_explicit_request(options)
-    app = options.delete(:app) || lambda {|app_env| [200, {}, 'OK']}
+    app = options.delete(:app) || ->(_app_env) { [200, {}, 'OK'] }
     request_options = options.slice(:span, :span_name, :service_name)
 
     connection = Faraday.new do |builder|

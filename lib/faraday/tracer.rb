@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'faraday'
 require 'opentracing'
 
@@ -16,7 +18,7 @@ module Faraday
     #        is called.
     # @param errors [Array<Class>] An array of error classes to be captured by the tracer
     #        as errors. Errors are **not** muted by the middleware.
-    def initialize(
+    def initialize( # rubocop:disable Metrics/ParameterLists
         app,
         span: nil,
         span_name: nil,
@@ -34,9 +36,8 @@ module Faraday
 
     def call(env)
       span = @tracer.start_span(span_name(env),
-        child_of: parent_span(env),
-        tags: prepare_tags(env)
-      )
+                                child_of: parent_span(env),
+                                tags: prepare_tags(env))
       @tracer.inject(span.context, OpenTracing::FORMAT_RACK, env[:request_headers])
       @app.call(env).on_complete do |response|
         span.set_tag('http.status_code', response.status)
@@ -59,10 +60,9 @@ module Faraday
     def parent_span(env)
       context = env.request.context
       span = context.is_a?(Hash) && context[:span] || @parent_span
+      return unless span
 
-      if span
-        span.respond_to?(:call) ? span.call : span
-      end
+      span.respond_to?(:call) ? span.call : span
     end
 
     def prepare_tags(env)
@@ -70,7 +70,7 @@ module Faraday
         'component' => 'faraday',
         'span.kind' => 'client',
         'http.method' => env[:method],
-        'http.url' => env[:url].to_s,
+        'http.url' => env[:url].to_s
       }
 
       if (service_name = peer_service(env))
