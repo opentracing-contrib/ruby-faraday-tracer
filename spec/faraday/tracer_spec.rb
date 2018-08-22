@@ -46,6 +46,23 @@ RSpec.describe Faraday::Tracer do
 
     describe 'error handling' do
       it 'finishes the span' do
+        make_request.call(status_code: 502, body: 'Service Unavailable')
+        expect(tracer).to have_spans.finished
+      end
+
+      it 'marks the span as failed' do
+        make_request.call(status_code: 502, body: 'Service Unavailable')
+        expect(tracer).to have_span.with_tag('error', true)
+      end
+
+      it 'logs the error' do
+        make_request.call(status_code: 502, body: 'Service Unavailable')
+        expect(tracer).to have_span.with_log(event: 'error', message: 'Service Unavailable')
+      end
+    end
+
+    describe 'exception handling' do
+      it 'finishes the span' do
         exception = Timeout::Error.new
         expect { make_request.call(app: ->(_env) { raise exception }) }.to raise_error(exception)
         expect(tracer).to have_spans.finished
@@ -79,7 +96,9 @@ RSpec.describe Faraday::Tracer do
   end
 
   def make_builder_request(options)
-    app = options.delete(:app) || ->(_app_env) { [200, {}, 'OK'] }
+    status_code = options.fetch(:status_code, 200)
+    body = options.fetch(:body, 'OK')
+    app = options.delete(:app) || ->(_app_env) { [status_code, {}, body] }
     request_options = options.slice(:span, :span_name, :service_name)
 
     connection = Faraday.new do |builder|
@@ -93,7 +112,9 @@ RSpec.describe Faraday::Tracer do
   end
 
   def make_explicit_request(options)
-    app = options.delete(:app) || ->(_app_env) { [200, {}, 'OK'] }
+    status_code = options.fetch(:status_code, 200)
+    body = options.fetch(:body, 'OK')
+    app = options.delete(:app) || ->(_app_env) { [status_code, {}, body] }
     request_options = options.slice(:span, :span_name, :service_name)
 
     connection = Faraday.new do |builder|
