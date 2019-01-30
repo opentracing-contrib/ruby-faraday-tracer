@@ -58,12 +58,12 @@ module Faraday
     private
 
     def span_name(env)
-      context = env.request.context
+      context = env.request.context if env.request.respond_to?(:context)
       context.is_a?(Hash) && context[:span_name] || @span_name || env[:method].to_s.upcase
     end
 
     def parent_span(env)
-      context = env.request.context
+      context = env.request.context if env.request.respond_to?(:context)
       span = context.is_a?(Hash) && context[:span] || @parent_span
       return unless span
 
@@ -86,7 +86,7 @@ module Faraday
     end
 
     def peer_service(env)
-      context = env.request.context
+      context = env.request.context if env.request.respond_to?(:context)
       context.is_a?(Hash) && context[:service_name] || @service_name
     end
   end
